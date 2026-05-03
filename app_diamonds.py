@@ -1,222 +1,269 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import pickle
-import plotly.express as px
-import plotly.graph_objects as go
 
 # ---------------------------------------------------
-# CONFIGURATION PAGE (TOUJOURS EN PREMIER)
+# CONFIGURATION (DOIT ÊTRE EN PREMIER)
 # ---------------------------------------------------
 st.set_page_config(
-    page_title="Diamonds Price App",
+    page_title="Prédicteur du prix des diamants",
     page_icon="💎",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="centered"
 )
 
-# ---------------------------------------------------
-# STYLE CSS PRO
-# ---------------------------------------------------
-st.markdown("""
-<style>
-.main {
-    background-color: #f8f9fa;
-}
-.block-container {
-    padding-top: 2rem;
-}
-.metric-card {
-    background: white;
-    padding: 18px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.title-main {
-    text-align:center;
-    font-size:42px;
-    font-weight:700;
-    color:#6c3fc5;
-}
-.subtitle-main {
-    text-align:center;
-    font-size:18px;
-    color:#555;
-    margin-bottom:25px;
-}
-</style>
-""", unsafe_allow_html=True)
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pickle
 
 # ---------------------------------------------------
-# CHARGEMENT DATA
+# CHARGEMENT DATASET
 # ---------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("diamonds.csv", index_col=0)
-    df = df.drop_duplicates()
-    df = df[(df["x"] > 0) & (df["y"] > 0) & (df["z"] > 0)]
-    return df
+    data = pd.read_csv("diamonds.csv", index_col=0)
+    data = data.drop_duplicates()
+    data = data[(data["x"] > 0) & (data["y"] > 0) & (data["z"] > 0)]
+    data = data[data["y"] < 20]
+    data = data[data["z"] < 10]
+    return data
 
+# ---------------------------------------------------
+# CHARGEMENT MODELE
+# ---------------------------------------------------
 @st.cache_resource
 def load_model():
     with open("model_diamonds.pkl", "rb") as f:
         model = pickle.load(f)
     return model
 
-df = load_data()
-model = load_model()
+# ---------------------------------------------------
+# APPLICATION
+# ---------------------------------------------------
+def main():
+
+    st.markdown(
+        "<h1 style='text-align:center;color:brown;'>💠Diamonds Price App</h1>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<h2 style='text-align:center;color:black;'>Prédiction du prix des diamants</h2>",
+        unsafe_allow_html=True
+    )
+
+    menu = ["Home", "Analysis", "Data Visualisation", "Machine Learning"]
+    choice = st.sidebar.selectbox("Select Menu", menu)
+
+    data = load_data()
+
+    # ---------------------------------------------------
+    # HOME
+    # ---------------------------------------------------
+    if choice == "Home":
+
+        st.subheader("Présentation du projet")
+
+        st.write("""
+        Cette application prédit le prix d'un diamant à partir de ses
+        caractéristiques physiques et qualitatives.
+
+        Le modèle utilisé est un XGBoost Regressor entraîné sur le dataset
+        diamonds.csv.
+        """)
+
+        st.subheader("Variables du dataset")
+
+        st.write(pd.DataFrame({
+            "Variable": [
+                "carat", "cut", "color", "clarity", "depth",
+                "table", "x", "y", "z", "price"
+            ],
+            "Type": [
+                "Numérique", "Catégorielle", "Catégorielle",
+                "Catégorielle", "Numérique", "Numérique",
+                "Numérique", "Numérique", "Numérique", "Numérique"
+            ],
+            "Description": [
+                "Poids du diamant (carat)",
+                "Qualité de taille (Fair → Ideal)",
+                "Couleur (D meilleur → J)",
+                "Clarté (I1 moins bonne → IF)",
+                "Profondeur totale (%)",
+                "Largeur du dessus (%)",
+                "Longueur (mm)",
+                "Largeur (mm)",
+                "Profondeur (mm)",
+                "Prix en USD"
+            ]
+        }))
+
+    # ---------------------------------------------------
+    # ANALYSIS
+    # ---------------------------------------------------
+    elif choice == "Analysis":
+
+        st.subheader("Dataset Diamonds")
+        st.write(data.head())
+
+        if st.checkbox("Résumé statistique"):
+            st.write(data.describe())
+
+        if st.checkbox("Valeurs manquantes"):
+            st.write(data.isnull().sum())
+
+        if st.checkbox("Corrélation"):
+            fig, ax = plt.subplots(figsize=(10, 7))
+            sns.heatmap(
+                data.select_dtypes(include="number").corr(),
+                annot=True,
+                fmt=".2f",
+                ax=ax
+            )
+            st.pyplot(fig)
+            plt.close(fig)
+
+    # ---------------------------------------------------
+    # DATA VISUALISATION
+    # ---------------------------------------------------
+    elif choice == "Data Visualisation":
+
+        if st.checkbox("Distribution du prix"):
+            fig, ax = plt.subplots(figsize=(8, 4))
+            sns.histplot(data["price"], bins=50, ax=ax)
+            ax.set_title("Distribution du prix")
+            st.pyplot(fig)
+            plt.close(fig)
+
+        if st.checkbox("Carat vs Price"):
+            fig, ax = plt.subplots(figsize=(8, 5))
+            sns.scatterplot(
+                x="carat",
+                y="price",
+                data=data,
+                alpha=0.2,
+                s=10,
+                ax=ax
+            )
+            ax.set_title("Carat vs Price")
+            st.pyplot(fig)
+            plt.close(fig)
+
+        if st.checkbox("Prix moyen par Cut"):
+            fig, ax = plt.subplots(figsize=(7, 4))
+            order = ["Fair", "Good", "Very Good", "Premium", "Ideal"]
+            sns.barplot(
+                x="cut",
+                y="price",
+                data=data,
+                order=order,
+                ax=ax
+            )
+            ax.set_title("Prix moyen par qualité de taille")
+            st.pyplot(fig)
+            plt.close(fig)
+
+        if st.checkbox("Prix moyen par Clarity"):
+            fig, ax = plt.subplots(figsize=(8, 4))
+            order = ["I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"]
+            sns.barplot(
+                x="clarity",
+                y="price",
+                data=data,
+                order=order,
+                ax=ax
+            )
+            ax.set_title("Prix moyen par clarté")
+            st.pyplot(fig)
+            plt.close(fig)
+
+    # ---------------------------------------------------
+    # MACHINE LEARNING
+    # ---------------------------------------------------
+    elif choice == "Machine Learning":
+
+        st.subheader("Prédiction du prix d'un diamant")
+
+        model = load_model()
+
+        with st.form("prediction_form"):
+
+            carat = st.slider("Carat", 0.2, 5.0, 1.0, step=0.01)
+            cut = st.selectbox(
+                "Cut",
+                ["Fair", "Good", "Very Good", "Premium", "Ideal"]
+            )
+
+            color = st.selectbox(
+                "Color",
+                ["J", "I", "H", "G", "F", "E", "D"]
+            )
+
+            clarity = st.selectbox(
+                "Clarity",
+                ["I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"]
+            )
+
+            depth = st.slider("Depth (%)", 43.0, 79.0, 61.5, step=0.1)
+            table = st.slider("Table (%)", 43.0, 95.0, 57.0, step=0.5)
+            x = st.slider("x (mm)", 0.0, 10.9, 4.5, step=0.01)
+            y = st.slider("y (mm)", 0.0, 10.9, 4.5, step=0.01)
+            z = st.slider("z (mm)", 0.0, 6.98, 2.8, step=0.01)
+
+            submit = st.form_submit_button("Prédire le prix")
+
+        cut_map = {
+            "Fair": 0,
+            "Good": 1,
+            "Very Good": 2,
+            "Premium": 3,
+            "Ideal": 4
+        }
+
+        color_map = {
+            "J": 0,
+            "I": 1,
+            "H": 2,
+            "G": 3,
+            "F": 4,
+            "E": 5,
+            "D": 6
+        }
+
+        clarity_map = {
+            "I1": 0,
+            "SI2": 1,
+            "SI1": 2,
+            "VS2": 3,
+            "VS1": 4,
+            "VVS2": 5,
+            "VVS1": 6,
+            "IF": 7
+        }
+
+        if submit:
+
+            input_data = pd.DataFrame([{
+                "carat": carat,
+                "cut": cut_map[cut],
+                "color": color_map[color],
+                "clarity": clarity_map[clarity],
+                "depth": depth,
+                "table": table,
+                "x": x,
+                "y": y,
+                "z": z
+            }])
+
+            st.write("Caractéristiques saisies :")
+            st.write(input_data)
+
+            prediction = model.predict(input_data)[0]
+
+            st.success(f"Prix estimé : {prediction:,.0f} USD")
+
 
 # ---------------------------------------------------
-# TITRE
+# LANCEMENT
 # ---------------------------------------------------
-st.markdown('<div class="title-main">💎 Diamonds Price App</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle-main">Prediction intelligente du prix d’un diamant avec Machine Learning</div>', unsafe_allow_html=True)
-
-# ---------------------------------------------------
-# MENU SIDEBAR
-# ---------------------------------------------------
-menu = st.sidebar.radio(
-    "Navigation",
-    ["Accueil", "Dashboard", "Visualisation", "Prédiction"]
-)
-
-# ---------------------------------------------------
-# PAGE ACCUEIL
-# ---------------------------------------------------
-if menu == "Accueil":
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric("Diamants", f"{len(df):,}")
-    col2.metric("Prix moyen", f"{df['price'].mean():,.0f} $")
-    col3.metric("Carat moyen", f"{df['carat'].mean():.2f}")
-
-    st.markdown("---")
-
-    st.subheader("À propos du projet")
-    st.write("""
-    Cette application utilise un modèle **XGBoost Regressor** pour estimer
-    le prix d’un diamant selon ses caractéristiques physiques et qualitatives.
-    
-    Variables utilisées :
-    - Carat
-    - Cut
-    - Color
-    - Clarity
-    - Depth
-    - Table
-    - x, y, z
-    """)
-
-    st.dataframe(df.head(10), use_container_width=True)
-
-# ---------------------------------------------------
-# DASHBOARD
-# ---------------------------------------------------
-elif menu == "Dashboard":
-
-    st.subheader("Analyse Générale")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        fig = px.histogram(df, x="price", nbins=50, title="Distribution des prix")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        fig = px.scatter(
-            df.sample(3000),
-            x="carat",
-            y="price",
-            opacity=0.5,
-            title="Carat vs Prix"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-# ---------------------------------------------------
-# VISUALISATION
-# ---------------------------------------------------
-elif menu == "Visualisation":
-
-    st.subheader("Analyse Catégorielle")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        fig = px.box(
-            df,
-            x="cut",
-            y="price",
-            color="cut",
-            title="Prix selon Cut"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        fig = px.box(
-            df,
-            x="clarity",
-            y="price",
-            color="clarity",
-            title="Prix selon Clarity"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-# ---------------------------------------------------
-# PREDICTION
-# ---------------------------------------------------
-elif menu == "Prédiction":
-
-    st.subheader("Estimation du prix")
-
-    with st.form("prediction_form"):
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            carat = st.slider("Carat", 0.2, 5.0, 1.0, 0.01)
-            cut = st.selectbox("Cut", ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal'])
-            color = st.selectbox("Color", ['J', 'I', 'H', 'G', 'F', 'E', 'D'])
-
-        with col2:
-            clarity = st.selectbox("Clarity", ['I1', 'SI2', 'SI1', 'VS2', 'VS1', 'VVS2', 'VVS1', 'IF'])
-            depth = st.slider("Depth", 43.0, 79.0, 61.5, 0.1)
-            table = st.slider("Table", 43.0, 95.0, 57.0, 0.5)
-
-        with col3:
-            x = st.slider("x (mm)", 0.0, 10.9, 4.5, 0.01)
-            y = st.slider("y (mm)", 0.0, 10.9, 4.5, 0.01)
-            z = st.slider("z (mm)", 0.0, 6.98, 2.8, 0.01)
-
-        submit = st.form_submit_button("Prédire")
-
-    if submit:
-
-        cut_map = {'Fair':0,'Good':1,'Very Good':2,'Premium':3,'Ideal':4}
-        color_map = {'J':0,'I':1,'H':2,'G':3,'F':4,'E':5,'D':6}
-        clarity_map = {'I1':0,'SI2':1,'SI1':2,'VS2':3,'VS1':4,'VVS2':5,'VVS1':6,'IF':7}
-
-        X = pd.DataFrame([{
-            "carat": carat,
-            "cut": cut_map[cut],
-            "color": color_map[color],
-            "clarity": clarity_map[clarity],
-            "depth": depth,
-            "table": table,
-            "x": x,
-            "y": y,
-            "z": z
-        }])
-
-        pred = model.predict(X)[0]
-
-        st.success(f"Prix estimé : {pred:,.0f} USD")
-
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=pred,
-            title={'text': "Valeur estimée"},
-            gauge={'axis': {'range': [0, max(20000, pred*1.2)]}}
-        ))
-
-        st.plotly_chart(fig, use_container_width=True)
+if __name__ == "__main__":
+    main()
