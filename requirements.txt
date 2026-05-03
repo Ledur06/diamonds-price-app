@@ -1,8 +1,7 @@
-streamlit>=1.45.0
+streamlit
 pandas
 numpy
-matplotlib
-seaborn
-xgboost
+plotly
 scikit-learn
-pickle5
+xgboost
+joblib
