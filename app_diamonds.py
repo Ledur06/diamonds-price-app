@@ -1,4 +1,6 @@
 import streamlit as st
+# Titre et mise en page
+st.set_page_config(page_title="Prédicteur du prix des diamants", page_icon="💎", layout="centered")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,9 +23,6 @@ def load_model():
     with open('model_diamonds.pkl', 'rb') as f:
         model = pickle.load(f)
     return model
-
-# Titre et mise en page
-st.set_page_config(page_title="Prédicteur du prix des diamants", page_icon="💎", layout="centered")
 
 
 def main():
@@ -108,48 +107,40 @@ def main():
 
     # ─── MACHINE LEARNING ────────────────────────────────────────
     elif choice == 'Machine Learning':
-        st.subheader('Prédiction du prix d\'un diamant')
+    st.subheader("Prédiction du prix d'un diamant")
 
-        model = load_model()
+    model = load_model()
 
-        # Saisie des caractéristiques dans la sidebar
-        st.sidebar.subheader('Caractéristiques du diamant')
+    with st.form("prediction_form"):
 
-        carat   = st.sidebar.slider('Carat', 0.2, 5.0, 1.0, step=0.01)
-        cut     = st.sidebar.selectbox('Cut', ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal'])
-        color   = st.sidebar.selectbox('Color', ['J', 'I', 'H', 'G', 'F', 'E', 'D'])
-        clarity = st.sidebar.selectbox('Clarity', ['I1', 'SI2', 'SI1', 'VS2', 'VS1', 'VVS2', 'VVS1', 'IF'])
-        depth   = st.sidebar.slider('Depth (%)', 43.0, 79.0, 61.5, step=0.1)
-        table   = st.sidebar.slider('Table (%)', 43.0, 95.0, 57.0, step=0.5)
-        x       = st.sidebar.slider('x (mm)', 0.0, 10.9, 4.5, step=0.01)
-        y       = st.sidebar.slider('y (mm)', 0.0, 10.9, 4.5, step=0.01)
-        z       = st.sidebar.slider('z (mm)', 0.0, 6.98, 2.8, step=0.01)
+        carat = st.slider('Carat', 0.2, 5.0, 1.0, step=0.01)
+        cut = st.selectbox('Cut', ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal'])
+        color = st.selectbox('Color', ['J', 'I', 'H', 'G', 'F', 'E', 'D'])
+        clarity = st.selectbox('Clarity', ['I1', 'SI2', 'SI1', 'VS2', 'VS1', 'VVS2', 'VVS1', 'IF'])
+        depth = st.slider('Depth (%)', 43.0, 79.0, 61.5, step=0.1)
+        table = st.slider('Table (%)', 43.0, 95.0, 57.0, step=0.5)
+        x = st.slider('x (mm)', 0.0, 10.9, 4.5, step=0.01)
+        y = st.slider('y (mm)', 0.0, 10.9, 4.5, step=0.01)
+        z = st.slider('z (mm)', 0.0, 6.98, 2.8, step=0.01)
 
-        # Encodage ordinal — même encodage que dans le notebook
-        cut_map     = {'Fair': 0, 'Good': 1, 'Very Good': 2, 'Premium': 3, 'Ideal': 4}
-        color_map   = {'J': 0, 'I': 1, 'H': 2, 'G': 3, 'F': 4, 'E': 5, 'D': 6}
-        clarity_map = {'I1': 0, 'SI2': 1, 'SI1': 2, 'VS2': 3, 'VS1': 4, 'VVS2': 5, 'VVS1': 6, 'IF': 7}
+        submit = st.form_submit_button("Prédire le prix")
 
-        # Construction du dataframe de prédiction
+    if submit:
+        cut_map = {'Fair':0,'Good':1,'Very Good':2,'Premium':3,'Ideal':4}
+        color_map = {'J':0,'I':1,'H':2,'G':3,'F':4,'E':5,'D':6}
+        clarity_map = {'I1':0,'SI2':1,'SI1':2,'VS2':3,'VS1':4,'VVS2':5,'VVS1':6,'IF':7}
+
         input_data = pd.DataFrame([{
-            'carat':   carat,
-            'cut':     cut_map[cut],
-            'color':   color_map[color],
-            'clarity': clarity_map[clarity],
-            'depth':   depth,
-            'table':   table,
-            'x':       x,
-            'y':       y,
-            'z':       z
+            'carat':carat,
+            'cut':cut_map[cut],
+            'color':color_map[color],
+            'clarity':clarity_map[clarity],
+            'depth':depth,
+            'table':table,
+            'x':x,
+            'y':y,
+            'z':z
         }])
 
-        st.write('Caractéristiques saisies :')
-        st.write(input_data)
-
-        if st.button('Prédire le prix'):
-            prediction = model.predict(input_data)[0]
-            st.success(f'Prix estimé : **{prediction:,.0f} USD**')
-
-
-if __name__ == '__main__':
-    main()
+        prediction = model.predict(input_data)[0]
+        st.success(f"Prix estimé : {prediction:,.0f} USD")
