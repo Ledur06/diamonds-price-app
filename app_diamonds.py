@@ -77,11 +77,11 @@ def main():
         with col_text:
             st.subheader("Présentation du projet")
             st.write("""
-            Cette application prédit le prix d'un diamant à partir de ses
-            caractéristiques physiques et qualitatives.
+            Cette application a pour objectif de prédire le prix d’un diamant à partir de ses caractéristiques physiques et qualitatives telles que le poids (carat), la coupe, la couleur ou encore la clarté.
 
-            Le modèle utilisé est un **XGBoost Regressor** entraîné sur le dataset
-            `diamonds.csv` contenant plus de 53 000 diamants.
+Pour ce faire, nous utilisons un modèle de machine learning de type XGBoost Regressor, reconnu pour ses performances en régression sur des données complexes et non linéaires. Le modèle a été entraîné sur le dataset diamonds.csv, qui contient plus de 53 000 observations de diamants avec leurs différentes caractéristiques.
+
+L’objectif principal est d’estimer, avec le plus de précision possible, la valeur en dollars américains d’un diamant à partir de ses 9 variables explicatives, afin de fournir une aide à la décision fiable et rapide dans un contexte d’évaluation ou de vente.
 
             **Objectif :** estimer le prix en USD d'un diamant à partir de ses 9 caractéristiques.
             """)
