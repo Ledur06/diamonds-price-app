@@ -83,7 +83,6 @@ Pour ce faire, nous utilisons un modèle de machine learning de type XGBoost Reg
 
 L’objectif principal est d’estimer, avec le plus de précision possible, la valeur en dollars américains d’un diamant à partir de ses 9 variables explicatives, afin de fournir une aide à la décision fiable et rapide dans un contexte d’évaluation ou de vente.
 
-            **Objectif :** estimer le prix en USD d'un diamant à partir de ses 9 caractéristiques.
             """)
 
         with col_kpis:
